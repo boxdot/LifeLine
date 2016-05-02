@@ -1,26 +1,59 @@
-__author__ = 'haoyu'
+import sys
 
 from FileReader import FileReader
-from Config import Config
-from ScriptSpliter import ScriptSpliter
-from GameBlock import GameBlock
+from GameBlock import GameBlock, Message, Question, State
 
 
-class Game:
-    def __init__(self, config):
-        self.config = config
-        fileReader = FileReader(self.config.filename)
-        scriptParser = ScriptSpliter(fileReader)
-        self.__gameBlocks = scriptParser.parse()
-        self.__gameParameter = {}
+def parse(reader):
+    blocks = {}
+    blockName = None
+    blocks[blockName] = GameBlock(blockName)
+    for line in reader:
+        if 0 == len(line):
+            continue
+        if line.startswith('//'):
+            continue
+        if line.startswith(':: '):
+            blockName = line[3:].strip()
+            if blockName not in blocks.keys():
+                blocks[blockName] = GameBlock(blockName)
+            continue
+        blocks[blockName].scripts.append(line)
+    return blocks
 
-    def run(self):
-        blockName = 'Start'
-        while blockName != 'game null pointer':
-            blockName, self.__gameParameter = self.__gameBlocks[blockName].execute(self.__gameParameter)
+
+def main():
+    reader = FileReader('../story.txt')
+    blocks = parse(reader)
+    state = {}
+
+    label = 'launch'
+    while label in blocks:
+        steps = iter(blocks[label].execute(state))
+        for step in steps:
+            if isinstance(step, Message):
+                print(step.message)
+            elif isinstance(step, Question):
+                print()
+                for num, q in zip(
+                        range(1, len(step.questions) + 1), step.questions):
+                    print("[{}]: {}".format(num, q))
+                num = -1
+                while not (1 <= num and num <= len(step.questions)):
+                    try:
+                        num = int(input('Your Answer: '))
+                    except:
+                        num = -1
+                step.answer = num - 1
+            elif isinstance(step, State):
+                label, state = step.block_label, step.parameters
+                if label is None:
+                    print('-- Game Over --')
+                    sys.exit(0)
+                break
+            else:
+                assert(False)
 
 
 if __name__ == '__main__':
-    config = Config()
-    game = Game(config)
-    game.run()
+    main()

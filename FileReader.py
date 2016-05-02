@@ -1,6 +1,3 @@
-__author__ = 'haoyu'
-
-
 class FileReader:
     def __init__(self, filename):
         self.filename = filename
@@ -41,7 +38,7 @@ class FileReader:
                 self.__recordScript(script)
             __FILE.close()
         except:
-            print('加载游戏脚本出错')
+            print('Fehler beim Laden des Spiel-Skripts')
             raise
 
     def __iter__(self):
@@ -52,10 +49,3 @@ class FileReader:
             return self.__script.pop(0).strip().strip(chr(65279))
         except:
             raise StopIteration
-
-
-if __name__ == '__main__':
-    FILENAME = 'StoryDataSmall.txt'
-    scriptReader = FileReader(FILENAME)
-    for x in scriptReader:
-        print(x)
