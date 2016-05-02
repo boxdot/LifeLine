@@ -133,7 +133,7 @@ class GameBlock:
         assert(q.answer is not None)
         self.nextName = self.__choicesJump[q.answer]
 
-    def __delay(self, time_delay='none', busy=False):
+    def __delay(self, time_delay='short', busy=False):
         delay = 1.5
         if isinstance(time_delay, int):
             delay = time_delay
