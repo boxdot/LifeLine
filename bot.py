@@ -1,13 +1,18 @@
 import os
 import json
 import glob
+import signal
 import logging
 import pykka
+import pykka.debug
 import requests
 from flask import Flask, request
 from taylor import Taylor, State, SAVES_DIR, load
 
 TOKEN = 'YOUR TELEGRAM BOT KEY HERE'
+
+logging.basicConfig(level=logging.DEBUG)
+signal.signal(signal.SIGUSR1, pykka.debug.log_thread_tracebacks)
 
 
 class Telegram(pykka.ThreadingActor):

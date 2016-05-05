@@ -64,7 +64,7 @@ class GameBlock:
         self.__choices += 1
 
     def __doIf(self, script):
-        parameter = self.__parameter
+        parameter = self.__parameter  # is used in eval below!
         script = script.replace('<<if', '')
         script = script.replace('<<elseif', '')
         script = script.replace('>>', '')
@@ -186,3 +186,22 @@ class GameBlock:
             if self.__jumpNow:
                 break
         yield(State(self.nextName, self.__parameter))
+
+
+def parse(reader):
+    """ Parse game blocks from FileReader. """
+    blocks = {}
+    blockName = None
+    blocks[blockName] = GameBlock(blockName)
+    for line in reader:
+        if 0 == len(line):
+            continue
+        if line.startswith('//'):
+            continue
+        if line.startswith(':: '):
+            blockName = line[3:].strip()
+            if blockName not in blocks.keys():
+                blocks[blockName] = GameBlock(blockName)
+            continue
+        blocks[blockName].scripts.append(line)
+    return blocks

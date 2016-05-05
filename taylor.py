@@ -1,17 +1,11 @@
 import os
 import json
-import signal
 import logging
 from copy import deepcopy
 
 import pykka
-import pykka.debug
-from GameBlock import Message, Question, State
-from FileReader import FileReader
-from main import parse
-
-logging.basicConfig(level=logging.DEBUG)
-signal.signal(signal.SIGUSR1, pykka.debug.log_thread_tracebacks)
+from gameblock import Message, Question, State, parse
+from filereader import FileReader
 
 
 SAVES_DIR = 'saves'
