@@ -17,17 +17,27 @@ class Message(object):
     def __init__(self, message):
         self.message = message
 
+    def __repr__(self):
+        return 'Message({})'.format(self.message)
+
 
 class Question(object):
-    def __init__(self, questions):
-        self.questions = questions
+    def __init__(self, question, answers):
+        self.question = question or 'Auswahl: '
+        self.answers = answers
         self.answer = None
+
+    def __repr__(self):
+        return 'Question({}, {})'.format(self.question, self.answers)
 
 
 class State(object):
     def __init__(self, block_label, parameters):
         self.block_label = block_label
         self.parameters = parameters
+
+    def __repr__(self):
+        return 'State({}, params=...)'.format(self.block_label)
 
 
 class GameBlock:
@@ -41,6 +51,7 @@ class GameBlock:
         self.__choicesJump = []
         self.__choicesShow = []
         self.__choices = 0
+        self.__message = None
 
     def __doChoice(self, script):
         tagStart = script.find('[[')
@@ -61,7 +72,7 @@ class GameBlock:
         script = script.replace(' eq ', ' == ')
         script = script.replace(' gte ', ' >= ')
         script = re.sub(
-            r'\$(\S+)', r'"\1" in parameter and parameter["\1"]', script)
+            r'\$(\S+)', r'parameter["\1"]', script)
         script = script.strip()
         self.__if[-1] = eval(script)
 
@@ -107,6 +118,15 @@ class GameBlock:
     def __doSilently(self, script):
         self.__silently = script.startswith('<<silently')
 
+    def __doPrintParameter(self, script):
+        tagStart = script.find('$')
+        tagEnd = script.find('>>')
+        parameter = script[tagStart + 1:tagEnd]
+        try:
+            yield str(self.__parameter[parameter])
+        except:
+            pass
+
     def __doScript(self, script):
         if script.startswith('<<if') or script.startswith('<<elseif') or \
                 script.startswith('<<endif') or script.startswith('<<else'):
@@ -125,10 +145,13 @@ class GameBlock:
             if script.startswith('<<set'):
                 self.__doSet(script)
                 return
+            if script.startswith('<<$'):
+                yield from self.__doPrintParameter(script)
+                return
 
-    def __makeChoice(self):
+    def __makeChoice(self, message):
         yield from self.__delay()
-        q = Question(self.__choicesShow)
+        q = Question(message, self.__choicesShow)
         yield(q)
         assert(q.answer is not None)
         self.nextName = self.__choicesJump[q.answer]
@@ -151,12 +174,15 @@ class GameBlock:
             if script.startswith('<<') or script.startswith('[['):
                 yield from self.__doScript(script)
                 if self.__choices == 2:
-                    yield from self.__makeChoice()
+                    yield from self.__makeChoice(self.__message)
                     break
                 continue
             if self.__if[-1]:
-                yield from self.__delay()
-                yield(Message(script))
+                if self.__message:
+                    yield from self.__delay()
+                    yield(Message(self.__message))
+                self.__message = script
+
             if self.__jumpNow:
                 break
         yield(State(self.nextName, self.__parameter))
